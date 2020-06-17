@@ -149,8 +149,7 @@ export class AnchoredRegion extends FASTElement {
     @observable
     public anchorElement: HTMLElement | null = null;
     private anchorElementChanged(): void {
-        if (this.initialLayoutComplete) {
-            this.initialLayoutComplete = false;
+        if (this.$fastController.isConnected) {
             this.reset();
         }
     }
@@ -158,8 +157,7 @@ export class AnchoredRegion extends FASTElement {
     @observable
     public viewportElement: HTMLElement | null = null;
     private viewportElementChanged(): void {
-        if (this.initialLayoutComplete) {
-            this.initialLayoutComplete = false;
+        if (this.$fastController.isConnected) {
             this.reset();
         }
     }
@@ -235,18 +233,6 @@ export class AnchoredRegion extends FASTElement {
     connectedCallback() {
         super.connectedCallback();
 
-        if (this.viewportElement === null) {
-            this.viewportElement = this.getViewport();
-        }
-
-        if (this.anchorElement === null) {
-            this.anchorElement = this.getAnchor();
-        }
-
-        if (this.anchorElement === null || this.viewportElement === null) {
-            return;
-        }
-
         this.currentDirection = this.getDirection();
 
         this.connectObservers();
@@ -254,7 +240,6 @@ export class AnchoredRegion extends FASTElement {
 
     public disconnectedCallback(): void {
         super.disconnectedCallback();
-
         this.disconnectObservers();
     }
 
@@ -322,6 +307,14 @@ export class AnchoredRegion extends FASTElement {
      * connects observers and event handlers
      */
     private connectObservers = (): void => {
+        if (this.viewportElement === null) {
+            this.viewportElement = this.getViewport();
+        }
+
+        if (this.anchorElement === null) {
+            this.anchorElement = this.getAnchor();
+        }
+
         if (this.anchorElement === null || this.viewportElement === null) {
             return;
         }
@@ -694,9 +687,9 @@ export class AnchoredRegion extends FASTElement {
             desiredVerticalPosition
         );
 
-        const positionChanged: boolean = !(
-            this.horizontalPosition === desiredHorizontalPosition &&
-            this.verticalPosition === desiredVerticalPosition
+        const positionChanged: boolean = (
+            this.horizontalPosition !== desiredHorizontalPosition ||
+            this.verticalPosition !== desiredVerticalPosition
         );
 
         this.setHorizontalPosition(desiredHorizontalPosition, nextPositionerDimension);
@@ -717,12 +710,15 @@ export class AnchoredRegion extends FASTElement {
      *  to the root element
      */
     private updateRegionStyle = (): void => {
-        this.classList.toggle("horizontalInset", this.horizontalInset);
-        this.classList.toggle("verticalInset", this.verticalInset);
         this.classList.toggle("top", this.verticalPosition === "top");
         this.classList.toggle("bottom", this.verticalPosition === "bottom");
+        this.classList.toggle("inset-top", this.verticalPosition === "insetTop");
+        this.classList.toggle("inset-bottom", this.verticalPosition === "insetBottom");
+
         this.classList.toggle("left", this.horizontalPosition === "left");
         this.classList.toggle("right", this.horizontalPosition === "right");
+        this.classList.toggle("inset-left", this.horizontalPosition === "insetLeft");
+        this.classList.toggle("inset-right", this.horizontalPosition === "insetRight");
 
         this.regionStyle = `
             height: ${this.regionHeight};
